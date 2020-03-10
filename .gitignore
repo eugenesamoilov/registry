@@ -1,0 +1,5 @@
+/nginx/ssl/mirror/*  
+/nginx/ssl/private/*
+/data/*
+/data_private/*
+

@@ -1,0 +1,4 @@
+mirror_registry deleting old images after 1 week
+private_registry handling removing and restart docker compose
+
+

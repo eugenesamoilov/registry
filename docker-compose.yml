@@ -1,0 +1,54 @@
+version: '3'
+services:
+#MIRROR Registry
+  registry:
+    container_name: registry_mirror
+    image: registry
+    restart: always
+    expose:
+      - "5000"
+    environment:
+      - REGISTRY_STORAGE_DELETE_ENABLED="true"
+    volumes:
+      - ./data:/var/lib/registry
+      - ./config/config_mirror:/etc/docker/registry
+#NGINX
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - "registry"
+      - "registry_private"
+    volumes:
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/ssl/:/etc/nginx/ssl/
+#PRIVATE Registry 
+  registry_private:
+    container_name: registry_private
+    image: registry:latest
+    restart: always
+    expose:
+      - "5000"
+    environment:
+      #REGISTRY_AUTH: htpasswd
+      #REGISTRY_AUTH_HTPASSWD_REALM: Registry-Realm
+      #REGISTRY_AUTH_HTPASSWD_PATH: /auth/registry.passwd
+      - REGISTRY_STORAGE_DELETE_ENABLED="true"
+      - REGISTRY_AUTH=token
+      - REGISTRY_AUTH_TOKEN_REALM=https://gitlab.devops.lab/jwt/auth 
+      - REGISTRY_AUTH_TOKEN_SERVICE=container_registry 
+      - REGISTRY_AUTH_TOKEN_ISSUER=gitlab-issuer 
+      - REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/etc/nginx/ssl/private/registry-auth.pem
+      - REGISTRY_HTTP_TLS_CERTIFICATE=/etc/nginx/ssl/private/public.pem 
+      - REGISTRY_HTTP_TLS_KEY=/etc/nginx/ssl/private/private.key
+
+    volumes:
+      - ./data_private:/var/lib/registry
+      #- ./auth:/auth
+      - ./config/config_private:/etc/docker/registry
+      - ./nginx/ssl/private:/etc/nginx/ssl/private
